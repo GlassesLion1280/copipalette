@@ -90,6 +90,15 @@
   .rlbl{display:inline-block;font-size:10.5px;color:var(--accent);border:1px solid #2c3346;border-radius:6px;padding:1px 7px;margin-top:6px}
   .rstar{flex-shrink:0;font-size:17px;color:#3a4056;padding:2px 4px;line-height:1.2}
   .rstar.on{color:#ffd85f}
+  .acc{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;background:var(--panel)}
+  .acchead{display:flex;align-items:center;gap:9px;padding:14px;cursor:pointer;user-select:none}
+  .acchead:hover{background:#161923}
+  .accname{flex:1;font-size:14px;font-weight:700}
+  .acccount{font-size:12px;color:var(--sub)}
+  .accarrow{color:var(--accent);font-size:12px;transition:transform .15s}
+  .acc.open .accarrow{transform:rotate(90deg)}
+  .accbody{display:none;padding:0 12px 12px}
+  .acc.open .accbody{display:block}
   .favbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
   .favbtn{padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer}
   .favbtn:hover{border-color:var(--accent)}
@@ -188,14 +197,17 @@ function render(){
     if(!list.length){bodyEl.appendChild(emptyMsg("☆でお気に入り登録すると\nここに集まります"));return;}
     bodyEl.appendChild(makeGroupBox("text",list));return;}
   let total=0;const allView=group==="all";const showTitles=cat.groups.length>1;
+  const useAcc=allView&&!query&&cat.groups.length>1;let firstOpen=true;
   cat.groups.forEach(g=>{
     if(!allView&&group!==g.name)return;
     const items=g.items.map(norm).filter(matches).map(it=>({...it,mode:it.mode||cat.mode,accent:cat.accent}));
     if(!items.length)return;
     total+=items.length;
-    if(showTitles){const h=document.createElement("div");h.className="groupttl";h.textContent=g.name+"（"+items.length+"）";bodyEl.appendChild(h);}
-    if(allView&&!query) bodyEl.appendChild(makePreview(cat.mode,items,g.name));
-    else bodyEl.appendChild(makeGroupBox(cat.mode,items));
+    if(useAcc){ bodyEl.appendChild(accordion(cat.mode,g.name,items,firstOpen)); firstOpen=false; }
+    else {
+      if(showTitles){const h=document.createElement("div");h.className="groupttl";h.textContent=g.name+"（"+items.length+"）";bodyEl.appendChild(h);}
+      bodyEl.appendChild(makeGroupBox(cat.mode,items));
+    }
   });
   countEl.textContent=total+"件";
   if(!total)bodyEl.appendChild(emptyMsg(query?"見つかりませんでした":"まだありません"));
@@ -214,6 +226,20 @@ function makeGroupBox(mode,items){
   function more(){const end=Math.min(i+PAGE,items.length);for(;i<end;i++)cont.appendChild(makeNode(items[i],mode));
     if(i>=items.length)btn.style.display="none";else btn.textContent="もっと見る（残り"+(items.length-i)+"件）";}
   btn.onclick=more;wrap.appendChild(btn);more();return wrap;}
+// 折りたたみグループ（スマホで一覧から選べる／開いた時だけ描画で軽い）
+function accordion(mode,name,items,open){
+  const acc=div("acc"+(open?" open":""));
+  const head=div("acchead");
+  const arrow=document.createElement("span");arrow.className="accarrow";arrow.textContent="▸";
+  const nm=document.createElement("span");nm.className="accname";nm.textContent=name;
+  const ct=document.createElement("span");ct.className="acccount";ct.textContent=items.length+"件";
+  head.appendChild(arrow);head.appendChild(nm);head.appendChild(ct);
+  const body=div("accbody");let built=false;
+  function build(){if(!built){built=true;body.appendChild(makeGroupBox(mode,items));}}
+  head.onclick=()=>{acc.classList.toggle("open");if(acc.classList.contains("open"))build();};
+  if(open)build();
+  acc.appendChild(head);acc.appendChild(body);return acc;
+}
 // 「すべて」表示: 各グループ先頭48件だけプレビュー＋全部見るボタン（重さ対策）
 function makePreview(mode,items,groupName){
   const wrap=div(""),N=48,slice=items.slice(0,N),cont=containerFor(mode,slice);
