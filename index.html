@@ -130,6 +130,12 @@
     h1{font-size:17px}
     .hint{font-size:11px}
   }
+  /* デスクトップ: 行リストを複数列に（横スカスカ対策・モバイルは1列のまま） */
+  @media(min-width:640px){
+    .rowlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;border:0;border-radius:0;overflow:visible}
+    .rowlist .row{border:1px solid var(--line);border-radius:10px}
+    .rowlist.compact{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+  }
 </style>
 </head>
 <body>
