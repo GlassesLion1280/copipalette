@@ -113,12 +113,20 @@
     color:#0a0b0f;font-weight:700;padding:11px 20px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;
     transition:.2s;z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.5)}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:520px){
+    .row{padding:15px 14px}
+    .rstar{font-size:20px;padding:4px 6px}
+    .grid.kao .card{min-height:60px}
+    .tab{padding:9px 14px}
+    h1{font-size:17px}
+    .hint{font-size:11px}
+  }
 </style>
 </head>
 <body>
 <header>
   <div class="titlerow"><h1>コピ<span class="dot">パレット</span></h1><span class="hint">タップでコピー・☆でお気に入り</span></div>
-  <div class="searchwrap"><input id="search" type="search" placeholder="検索" autocomplete="off"><span class="x" id="clearSearch">×</span></div>
+  <div class="searchwrap"><input id="search" type="search" placeholder="🔍 検索（例: ありがとう・猫・矢印）" autocomplete="off"><span class="x" id="clearSearch">×</span></div>
 </header>
 <nav id="tabs"></nav>
 <div class="controls">
@@ -145,10 +153,12 @@ const DATA=[
 { id:"aiprompt", label:"AIプロンプト", mode:"text", accent:"#b98cff", groups:[{"name": "画像・サムネ生成", "items": [{"label": "サムネ文言を出す", "use": "サムネのキャッチコピーが欲しいとき", "template": "あなたはサムネ専門のコピーライターです。\n動画テーマは「{テーマ}」、ターゲットは{視聴者}。\nクリックしたくなるサムネ文言を{数}案。\n各案は{文字数}字以内、数字や煽りを効かせてください。"}, {"label": "サムネ背景を生成", "use": "サムネ用の背景画像を作るとき", "template": "「{被写体・テーマ}」のサムネ用背景画像。\nスタイルは{テイスト}、配色は{色}、明るめで被写体が映えるように上部に余白を確保。\n文字は入れない。16:9。"}, {"label": "透過素材を生成", "use": "重ねて使う透過PNGが欲しいとき", "template": "「{モチーフ}」の透過PNG素材。\n背景は透明、{テイスト}、単体で使える構図、余白なし。"}, {"label": "画像をリテイク", "use": "あと少しだけ直したいとき", "template": "今の画像から「{変えたい点}」だけ変えてください。\nそれ以外はそのまま維持で。"}]}, {"name": "文章・SNS", "items": [{"label": "X投稿を作る", "use": "投稿の下書きが欲しいとき", "template": "テーマ「{テーマ}」でX投稿を{数}案。\n1投稿{文字数}字、{狙い}が伝わるように。\nハッシュタグは{有無}。"}, {"label": "リライトして整える", "use": "文章を読みやすく直したいとき", "template": "次の文章を、意味を変えずに{トーン}に整えてください。\n冗長な部分は削って。\n\n{原文}"}, {"label": "要約する", "use": "長い文章を短くしたいとき", "template": "次の内容を{文字数}字で要約してください。\n要点は箇条書きで{数}個。\n\n{本文}"}, {"label": "タイトル案を出す", "use": "見出し・タイトルに迷うとき", "template": "「{内容}」のタイトルを{数}案。\n{狙い}で、クリックしたくなるように。"}]}, {"name": "動画・YouTube", "items": [{"label": "動画の構成を作る", "use": "動画の骨組みを決めたいとき", "template": "「{テーマ}」のYouTube動画の構成を作ってください。\n想定尺{分}分、対象は{視聴者}。\n導入→本編→まとめの流れで、各パートの見出しと要点を。"}, {"label": "概要欄を作る", "use": "YouTube概要欄を用意するとき", "template": "「{動画テーマ}」の概要欄を作ってください。\n冒頭あいさつ→内容説明→目次(タイムスタンプは仮)→SNSリンク欄の順で。"}]}, {"name": "スライド・資料", "items": [{"label": "プレゼンスライドを作る", "use": "見栄えするスライドを作りたいとき", "template": "あなたはトップアートディレクター兼インフォグラフィックデザイナーです。\nテーマ「{テーマ}」のプレゼンスライドを{枚数}枚作ってください。\n【絶対ルール】\n・Markdown記号(#,*,**等)は使わない\n・スライド上の文字は日本語と英語のプレーンテキストのみ\n・この指示文自体はスライドに表示しない"}]}, {"name": "整理・壁打ち", "items": [{"label": "壁打ちする", "use": "考えを整理したいとき", "template": "「{テーマ}」について壁打ちしたいです。\nまず論点を{数}個に整理して、それぞれに質問を1つずつ返してください。"}, {"label": "ステップに分解", "use": "やることを分解したいとき", "template": "「{目標}」を達成するためのステップを{数}個に分解してください。\n各ステップの最初の一手も添えて。"}, {"label": "比較して決める", "use": "選択肢で迷っているとき", "template": "「{A}」と「{B}」を{観点}で比較して、どちらがおすすめか結論を出してください。"}]}, {"name": "開発・Vault運用", "items": [{"label": "作業を始める", "use": "Vaultの記憶を読ませて始めるとき", "template": "~/obsidian-vault の Memory.md と hot.md を読んで、\n「{今日やること}」を進めてください。"}, {"label": "作業を締める", "use": "作業の最後にVaultを更新するとき", "template": "今の作業内容で、Vaultの log.md と関連ページを更新してください。"}, {"label": "引き継ぎを作る", "use": "別のAIに続きを渡すとき", "template": "今の作業状況を HANDOFF.md にまとめてください。\n次のAIが続きをできるよう、現状・残タスク・注意点を。"}, {"label": "コードレビュー依頼", "use": "変更を点検してほしいとき", "template": "次の変更を、バグと簡潔化の観点でレビューしてください。\n指摘は重要度が高い順に。\n\n{差分}"}]}, {"name": "役割・共通骨格", "items": [{"label": "役割を設定する", "use": "AIに専門家として振る舞わせたいとき", "template": "あなたは「{分野}」のプロフェッショナルです。\n{依頼内容}。\n出力は{形式}で。"}, {"label": "共通骨格テンプレ", "use": "プロンプトを型で組み立てたいとき", "template": "# 役割\nあなたは{役割}。\n# 入力\n{入力変数}\n# 出力ルール\n・{ルール1}\n・{ルール2}\n# タスク\n{やってほしいこと}"}]}] }
 ];
 
-const FAV_KEY="copyPalette.favs.v1",SIZE_KEY="copyPalette.kaoSize.v1";
+const FAV_KEY="copyPalette.favs.v1",SIZE_KEY="copyPalette.kaoSize.v1",REC_KEY="copyPalette.recent.v1",SEEN_KEY="copyPalette.seen.v1";
 let favs=new Set(JSON.parse(localStorage.getItem(FAV_KEY)||"[]"));
 const saveFavs=()=>localStorage.setItem(FAV_KEY,JSON.stringify([...favs]));
 let kaoSize=localStorage.getItem(SIZE_KEY)||"m";
+let recent=JSON.parse(localStorage.getItem(REC_KEY)||"[]");
+function pushRecent(t){recent=recent.filter(x=>x!==t);recent.unshift(t);recent=recent.slice(0,30);localStorage.setItem(REC_KEY,JSON.stringify(recent));}
 
 const norm=it=>typeof it==="string"?{text:it}:it;
 const isFill=o=>typeof o.template==="string";
@@ -163,7 +173,7 @@ const $=id=>document.getElementById(id);
 const tabsEl=$("tabs"),gchipsEl=$("gchips"),sizeboxEl=$("sizebox"),
   bodyEl=$("body"),countEl=$("count"),searchEl=$("search"),clearBtn=$("clearSearch"),toastEl=$("toast");
 
-const tabDefs=[{id:"fav",label:"☆ お気に入り",accent:"#ffd85f"},...DATA.map(c=>({id:c.id,label:c.label+"("+c.groups.reduce((a,g)=>a+g.items.length,0)+")",accent:c.accent,cid:c.id}))];
+const tabDefs=[{id:"recent",label:"🕘 最近",accent:"#9db2ff"},{id:"fav",label:"☆ お気に入り",accent:"#ffd85f"},...DATA.map(c=>({id:c.id,label:c.label+"("+c.groups.reduce((a,g)=>a+g.items.length,0)+")",accent:c.accent,cid:c.id}))];
 tabDefs.forEach(t=>{const b=document.createElement("button");b.className="tab";b.textContent=t.label;
   b.dataset.id=t.cid||t.id;b.dataset.accent=t.accent;
   b.onclick=()=>{active=b.dataset.id;group="all";query="";searchEl.value="";clearBtn.style.display="none";renderAll();};
@@ -190,6 +200,14 @@ function matches(o){if(!query)return true;const q=query.toLowerCase();
 
 function render(){
   bodyEl.innerHTML="";const cat=byId(active);
+  if(active==="recent"){
+    const bar=document.createElement("div");bar.className="favbar";
+    bar.appendChild(fbtn("🗑 履歴をクリア",()=>{recent=[];localStorage.setItem(REC_KEY,"[]");render();}));
+    bodyEl.appendChild(bar);
+    const list=recent.map(t=>favIndex[t]||{text:t}).filter(matches);
+    countEl.textContent=list.length+"件";
+    if(!list.length){bodyEl.appendChild(emptyMsg("コピーした項目が\n新しい順でここに並びます"));return;}
+    bodyEl.appendChild(makeGroupBox("text",list));return;}
   if(active==="fav"){
     bodyEl.appendChild(favToolbar());
     const list=[...favs].map(t=>favIndex[t]).filter(Boolean).filter(matches);
@@ -308,12 +326,14 @@ async function copy(text,card){let ok=false;
   catch(e){try{const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
     document.body.appendChild(ta);ta.select();ok=document.execCommand("copy");document.body.removeChild(ta);}catch(_){}}
   if(card){card.classList.add("copied");setTimeout(()=>card.classList.remove("copied"),450);}
+  if(ok)pushRecent(text);
   toast(ok?"コピーしました":"コピー失敗（手動で選択してください）");}
 let toastTimer;function toast(m){toastEl.textContent=m;toastEl.classList.add("show");
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove("show"),1300);}
 searchEl.oninput=()=>{query=searchEl.value.trim();clearBtn.style.display=query?"block":"none";group="all";renderChips();render();};
 clearBtn.onclick=()=>{searchEl.value="";query="";clearBtn.style.display="none";render();searchEl.focus();};
 renderAll();
+if(!localStorage.getItem(SEEN_KEY)){localStorage.setItem(SEEN_KEY,"1");setTimeout(()=>toast("タップでコピーできます！"),700);}
 </script>
 </body>
 </html>
