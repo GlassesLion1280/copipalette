@@ -93,6 +93,17 @@
   .rlbl{display:inline-block;font-size:10.5px;color:var(--accent);border:1px solid #2c3346;border-radius:6px;padding:1px 7px;margin-top:6px}
   .rstar{flex-shrink:0;font-size:17px;color:#3a4056;padding:2px 4px;line-height:1.2}
   .rstar.on{color:#ffd85f}
+  .row.fillrow{display:block;cursor:default;max-width:100%;overflow:hidden}
+  .row.fillrow:hover{background:var(--panel)}
+  .fillinline{font-size:14px;line-height:2.4;white-space:normal;overflow-wrap:anywhere;max-width:100%}
+  .fillinline input{max-width:100%}
+  .fillinline input{background:#0c0e15;border:none;border-bottom:1.5px solid var(--accent);color:var(--txt);
+    font-size:14px;font-family:inherit;padding:1px 6px;margin:0 2px;outline:none;border-radius:4px 4px 0 0;vertical-align:baseline}
+  .fillinline input::placeholder{color:#5a6376}
+  .fillrow-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:10px}
+  .rowcopy{flex-shrink:0;padding:8px 16px;border-radius:8px;border:1px solid var(--accent);
+    background:transparent;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer}
+  .rowcopy:active{background:var(--accent);color:#0a0b0f}
   .symgrid{gap:6px;grid-template-columns:repeat(auto-fill,minmax(56px,1fr))}
   .symgrid .card{min-height:50px;padding:6px;display:flex;align-items:center;justify-content:center}
   .symchar{font-size:21px;line-height:1;word-break:break-word}
@@ -295,16 +306,39 @@ function makePreview(mode,items,groupName){
 function kaoCard(it){const c=document.createElement("div");c.className="card";
   const s=document.createElement("div");s.className="kao";s.textContent=it.text;c.appendChild(s);
   c.appendChild(mkStar(it.text));c.onclick=()=>copy(it.text,c);return c;}
+function rstarEl(text){const star=document.createElement("span");star.className="rstar"+(favs.has(text)?" on":"");star.textContent=favs.has(text)?"★":"☆";
+  star.onclick=e=>{e.stopPropagation();if(favs.has(text))favs.delete(text);else favs.add(text);
+    saveFavs();star.classList.toggle("on");star.textContent=favs.has(text)?"★":"☆";if(active==="fav")render();};return star;}
 function rowItem(it,mode){
-  const r=document.createElement("div");r.className="row";
+  // 〇/◯/○ を含むテキストは入力欄化（装飾decoは除外）
+  const circles = mode!=="deco" && /[〇◯○]/.test(it.text||"");
+  const r=document.createElement("div");r.className="row"+(circles?" fillrow":"");
   const t=document.createElement("div");t.className="txt";
+  if(circles){
+    const body=document.createElement("div");body.className="rsnip fillinline";const inputs=[];
+    it.text.split(/([〇◯○]+)/).forEach(part=>{
+      if(part && /^[〇◯○]+$/.test(part)){
+        const inp=document.createElement("input");inp.placeholder=part;
+        inp.style.width=(vw(part)*0.62+2)+"em";
+        inp.oninput=()=>{inp.style.width=(Math.max(vw(inp.value),vw(part))*0.62+2)+"em";};
+        inp.onclick=e=>e.stopPropagation();
+        inputs.push(inp);body.appendChild(inp);
+      } else if(part){
+        part.split("\n").forEach((seg,i)=>{if(i>0)body.appendChild(document.createElement("br"));body.appendChild(document.createTextNode(seg));});
+      }
+    });
+    t.appendChild(body);
+    if(it.label){const l=document.createElement("span");l.className="rlbl";l.textContent=it.label;t.appendChild(l);}
+    r.appendChild(t);
+    const btn=document.createElement("button");btn.className="rowcopy";btn.textContent="この形でコピー";
+    btn.onclick=e=>{e.stopPropagation();let idx=0;const out=it.text.replace(/[〇◯○]+/g,run=>{const v=inputs[idx++].value.trim();return v||run;});copy(out,r);};
+    const act=document.createElement("div");act.className="fillrow-actions";
+    act.appendChild(btn);act.appendChild(rstarEl(it.text));
+    r.appendChild(act);return r;
+  }
   const s=document.createElement("div");s.className="rsnip"+(mode==="deco"?" mono":"");s.textContent=it.text;t.appendChild(s);
   if(it.label){const l=document.createElement("span");l.className="rlbl";l.textContent=it.label;t.appendChild(l);}
-  r.appendChild(t);
-  const star=document.createElement("span");star.className="rstar"+(favs.has(it.text)?" on":"");star.textContent=favs.has(it.text)?"★":"☆";
-  star.onclick=e=>{e.stopPropagation();if(favs.has(it.text))favs.delete(it.text);else favs.add(it.text);
-    saveFavs();star.classList.toggle("on");star.textContent=favs.has(it.text)?"★":"☆";if(active==="fav")render();};
-  r.appendChild(star);r.onclick=()=>copy(it.text,r);return r;}
+  r.appendChild(t);r.appendChild(rstarEl(it.text));r.onclick=()=>copy(it.text,r);return r;}
 function fillCard(item){
   const card=document.createElement("div");card.className="card fill-card";
   if(item.label){const l=document.createElement("div");l.className="fill-lbl";l.textContent=item.label;card.appendChild(l);}
