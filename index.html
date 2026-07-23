@@ -26,15 +26,12 @@
     background:var(--panel);color:var(--txt);font-size:15px;outline:none}
   #search:focus{border-color:var(--accent)}
   .searchwrap .x{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--sub);cursor:pointer;font-size:18px;display:none}
-  nav{display:flex;gap:8px;overflow-x:auto;padding:11px 16px 2px;scrollbar-width:none}
-  nav::-webkit-scrollbar{display:none}
+  nav{display:flex;gap:8px;flex-wrap:wrap;padding:11px 16px 2px}
   .tab{white-space:nowrap;padding:8px 14px;border-radius:999px;border:1px solid var(--line);
     background:var(--panel);color:var(--sub);font-size:14px;cursor:pointer;transition:.15s}
   .tab.active{color:#0a0b0f;background:var(--accent);border-color:var(--accent);font-weight:700}
-  .controls{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;padding:8px 16px 2px;overflow-x:auto;scrollbar-width:none}
-  .controls::-webkit-scrollbar{display:none}
-  .gchips{display:flex;gap:6px;flex:1;overflow-x:auto;scrollbar-width:none}
-  .gchips::-webkit-scrollbar{display:none}
+  .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 16px 4px}
+  .gchips{display:flex;gap:6px;flex-wrap:wrap;flex:1 1 100%}
   .gchip{white-space:nowrap;padding:5px 11px;border-radius:8px;border:1px solid var(--line);
     background:var(--panel);color:var(--sub);font-size:12.5px;cursor:pointer}
   .gchip.active{color:var(--accent);border-color:var(--accent)}
@@ -163,9 +160,9 @@
 </header>
 <nav id="tabs"></nav>
 <div class="controls">
-  <div class="gchips" id="gchips"></div>
   <div class="toolbtns" id="sizebox" style="display:none"><span class="lab">大きさ</span>
     <button class="tbtn" data-s="s">小</button><button class="tbtn" data-s="m">中</button><button class="tbtn" data-s="l">大</button></div>
+  <div class="gchips" id="gchips"></div>
 </div>
 <main><div class="count" id="count"></div><div id="body"></div></main>
 <footer>
