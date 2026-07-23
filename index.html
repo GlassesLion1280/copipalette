@@ -119,6 +119,13 @@
   .acc.open .accarrow{transform:rotate(90deg)}
   .accbody{display:none;padding:0 12px 12px}
   .acc.open .accbody{display:block}
+  .addform{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px}
+  .addta{width:100%;background:#0c0e15;border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:14px;font-family:inherit;padding:9px;outline:none;resize:vertical;line-height:1.6}
+  .addlab{width:100%;background:#0c0e15;border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px;font-family:inherit;padding:8px 9px;outline:none}
+  .addta:focus,.addlab:focus{border-color:var(--accent)}
+  .addbtn{align-self:flex-end;padding:8px 20px;border-radius:9px;border:1px solid var(--accent);background:var(--accent);color:#0a0b0f;font-size:13px;font-weight:800;cursor:pointer}
+  .rdel{flex-shrink:0;font-size:15px;padding:2px 5px;cursor:pointer;opacity:.65;line-height:1.2}
+  .rdel:hover{opacity:1}
   .favbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
   .favbtn{padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer}
   .favbtn:hover{border-color:var(--accent)}
@@ -185,6 +192,9 @@ const saveFavs=()=>localStorage.setItem(FAV_KEY,JSON.stringify([...favs]));
 let kaoSize=localStorage.getItem(SIZE_KEY)||"m";
 let recent=JSON.parse(localStorage.getItem(REC_KEY)||"[]");
 function pushRecent(t){recent=recent.filter(x=>x!==t);recent.unshift(t);recent=recent.slice(0,30);localStorage.setItem(REC_KEY,JSON.stringify(recent));}
+const MINE_KEY="copyPalette.mine.v1";
+let mine=JSON.parse(localStorage.getItem(MINE_KEY)||"[]");
+function saveMine(){localStorage.setItem(MINE_KEY,JSON.stringify(mine));}
 
 const norm=it=>typeof it==="string"?{text:it}:it;
 const isFill=o=>typeof o.template==="string";
@@ -199,7 +209,7 @@ const $=id=>document.getElementById(id);
 const tabsEl=$("tabs"),gchipsEl=$("gchips"),sizeboxEl=$("sizebox"),
   bodyEl=$("body"),countEl=$("count"),searchEl=$("search"),clearBtn=$("clearSearch"),toastEl=$("toast");
 
-const tabDefs=[{id:"recent",label:"🕘 最近",accent:"#9db2ff"},{id:"fav",label:"☆ お気に入り",accent:"#ffd85f"},...DATA.map(c=>({id:c.id,label:c.label+"("+c.groups.reduce((a,g)=>a+g.items.length,0)+")",accent:c.accent,cid:c.id}))];
+const tabDefs=[{id:"recent",label:"🕘 最近",accent:"#9db2ff"},{id:"fav",label:"☆ お気に入り",accent:"#ffd85f"},{id:"mine",label:"📝 マイ登録",accent:"#8fe6c0"},...DATA.map(c=>({id:c.id,label:c.label+"("+c.groups.reduce((a,g)=>a+g.items.length,0)+")",accent:c.accent,cid:c.id}))];
 tabDefs.forEach(t=>{const b=document.createElement("button");b.className="tab";b.textContent=t.label;
   b.dataset.id=t.cid||t.id;b.dataset.accent=t.accent;
   b.onclick=()=>{active=b.dataset.id;group="all";query="";searchEl.value="";clearBtn.style.display="none";renderAll();};
@@ -234,6 +244,15 @@ function render(){
     countEl.textContent=list.length+"件";
     if(!list.length){bodyEl.appendChild(emptyMsg("コピーした項目が\n新しい順でここに並びます"));return;}
     bodyEl.appendChild(makeGroupBox("text",list));return;}
+  if(active==="mine"){
+    bodyEl.appendChild(myAddForm());
+    bodyEl.appendChild(myToolbar());
+    const list=mine.map(norm);
+    countEl.textContent=list.length+"件";
+    if(!list.length){bodyEl.appendChild(emptyMsg("上の「＋ 追加」から自分の定型文を登録できます\n〇を入れると、そこが入力欄になります\n（例: 〇〇の件、よろしくお願いします）"));return;}
+    const rl=document.createElement("div");rl.className="rowlist";
+    list.forEach((it,i)=>rl.appendChild(rowItem(it,"text",()=>{mine.splice(i,1);saveMine();render();toast("削除しました");})));
+    bodyEl.appendChild(rl);return;}
   if(active==="fav"){
     bodyEl.appendChild(favToolbar());
     const list=[...favs].map(t=>favIndex[t]).filter(Boolean).filter(matches);
@@ -309,7 +328,9 @@ function kaoCard(it){const c=document.createElement("div");c.className="card";
 function rstarEl(text){const star=document.createElement("span");star.className="rstar"+(favs.has(text)?" on":"");star.textContent=favs.has(text)?"★":"☆";
   star.onclick=e=>{e.stopPropagation();if(favs.has(text))favs.delete(text);else favs.add(text);
     saveFavs();star.classList.toggle("on");star.textContent=favs.has(text)?"★":"☆";if(active==="fav")render();};return star;}
-function rowItem(it,mode){
+function delBtn(fn){const b=document.createElement("span");b.className="rdel";b.textContent="🗑";b.title="削除";
+  b.onclick=e=>{e.stopPropagation();fn();};return b;}
+function rowItem(it,mode,delFn){
   // 〇/◯/○ を含むテキストは入力欄化（装飾decoは除外）
   const circles = mode!=="deco" && /[〇◯○]/.test(it.text||"");
   const r=document.createElement("div");r.className="row"+(circles?" fillrow":"");
@@ -333,12 +354,12 @@ function rowItem(it,mode){
     const btn=document.createElement("button");btn.className="rowcopy";btn.textContent="この形でコピー";
     btn.onclick=e=>{e.stopPropagation();let idx=0;const out=it.text.replace(/[〇◯○]+/g,run=>{const v=inputs[idx++].value.trim();return v||run;});copy(out,r);};
     const act=document.createElement("div");act.className="fillrow-actions";
-    act.appendChild(btn);act.appendChild(rstarEl(it.text));
+    act.appendChild(btn);act.appendChild(delFn?delBtn(delFn):rstarEl(it.text));
     r.appendChild(act);return r;
   }
   const s=document.createElement("div");s.className="rsnip"+(mode==="deco"?" mono":"");s.textContent=it.text;t.appendChild(s);
   if(it.label){const l=document.createElement("span");l.className="rlbl";l.textContent=it.label;t.appendChild(l);}
-  r.appendChild(t);r.appendChild(rstarEl(it.text));r.onclick=()=>copy(it.text,r);return r;}
+  r.appendChild(t);r.appendChild(delFn?delBtn(delFn):rstarEl(it.text));r.onclick=()=>copy(it.text,r);return r;}
 function fillCard(item){
   const card=document.createElement("div");card.className="card fill-card";
   if(item.label){const l=document.createElement("div");l.className="fill-lbl";l.textContent=item.label;card.appendChild(l);}
@@ -363,6 +384,28 @@ function mkStar(text){const star=document.createElement("span");
   return star;}
 function emptyMsg(t){const d=document.createElement("div");d.className="empty";d.textContent=t;return d;}
 function fbtn(label,fn){const b=document.createElement("button");b.className="favbtn";b.textContent=label;b.onclick=fn;return b;}
+function myAddForm(){
+  const box=document.createElement("div");box.className="addform";
+  const ta=document.createElement("textarea");ta.className="addta";ta.rows=2;
+  ta.placeholder="登録する文を入力（〇を入れると、そこが入力欄になります）\n例: 〇〇の件、よろしくお願いします！";
+  const lab=document.createElement("input");lab.className="addlab";lab.placeholder="ラベル（任意・例: 挨拶）";
+  const btn=document.createElement("button");btn.className="addbtn";btn.textContent="＋ 追加";
+  btn.onclick=()=>{const t=ta.value.trim();if(!t){toast("文を入力してください");return;}
+    mine.unshift({text:t,label:lab.value.trim()});saveMine();render();toast("登録しました！");};
+  box.appendChild(ta);box.appendChild(lab);box.appendChild(btn);return box;}
+function myToolbar(){
+  const bar=document.createElement("div");bar.className="favbar";
+  bar.appendChild(fbtn("⬆ エクスポート",()=>{
+    if(!mine.length){toast("登録がまだありません");return;}
+    copy(btoa(unescape(encodeURIComponent(JSON.stringify(mine)))),null);
+    toast("登録コードをコピー！別の端末で「インポート」に貼り付け");}));
+  bar.appendChild(fbtn("⬇ インポート",()=>{
+    const code=prompt("エクスポートしたコードを貼り付けてください");if(!code)return;
+    try{const arr=JSON.parse(decodeURIComponent(escape(atob(code.trim()))));let add=0;
+      arr.forEach(x=>{if(x&&x.text&&!mine.some(m=>m.text===x.text)){mine.unshift(x);add++;}});
+      saveMine();render();toast("インポート完了（"+add+"件追加）");
+    }catch(e){toast("コードが読み取れませんでした");}}));
+  return bar;}
 function favToolbar(){
   const bar=document.createElement("div");bar.className="favbar";
   bar.appendChild(fbtn("⬆ エクスポート",()=>{
